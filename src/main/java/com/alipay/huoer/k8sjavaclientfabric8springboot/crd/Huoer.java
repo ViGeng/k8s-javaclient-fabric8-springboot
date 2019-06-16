@@ -6,8 +6,6 @@ import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionBui
 import io.fabric8.kubernetes.client.CustomResource;
 import lombok.Data;
 
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author: weigeng.gw

@@ -1,12 +1,18 @@
 package com.alipay.huoer.k8sjavaclientfabric8springboot.controller;
 
+import com.alipay.huoer.k8sjavaclientfabric8springboot.crd.DonealbeHuoer;
 import com.alipay.huoer.k8sjavaclientfabric8springboot.crd.Huoer;
+import com.alipay.huoer.k8sjavaclientfabric8springboot.crd.HuoerList;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.internal.KubernetesDeserializer;
+
 import java.util.logging.Logger;
 
 /**
@@ -23,10 +29,16 @@ public class HuoerController  {
         this.client = client;
     }
 
+
+    static {
+        KubernetesDeserializer.registerCustomKind(Huoer.CRD_GROUP + "/" + Huoer.CRD_VERSION, Huoer.CRD_KIND, Huoer.class);
+    }
+
     public void run() {
-        createCRD();
-        watchPods();
+        CustomResourceDefinition huoerCRD = createCRD();
+//        watchPods();
         watchDeployment();
+        watchHuoer(huoerCRD);
     }
 
     public CustomResourceDefinition createCRD() {
@@ -57,7 +69,6 @@ public class HuoerController  {
     }
 
     public void watchDeployment() {
-        Deployment dp = new Deployment();
         client.apps().deployments().watch(new Watcher<Deployment>() {
             @Override
             public void eventReceived(Action action, Deployment resource) {
@@ -69,5 +80,36 @@ public class HuoerController  {
 
             }
         });
+    }
+
+    public void watchHuoer(CustomResourceDefinition HuoerCRD) {
+        MixedOperation<Huoer, HuoerList, DonealbeHuoer, Resource<Huoer, DonealbeHuoer>> huoerClient = client.customResources(HuoerCRD, Huoer.class, HuoerList.class, DonealbeHuoer.class);
+//        work
+        client.customResourceDefinitions().watch(new Watcher<CustomResourceDefinition>() {
+            @Override
+            public void eventReceived(Action action, CustomResourceDefinition resource) {
+                logger.info("CRD event happened");
+                logger.info(action + resource.toString());
+            }
+
+            @Override
+            public void onClose(KubernetesClientException cause) {
+
+            }
+        });
+//        do not work
+//        huoerClient.watch(new Watcher<Huoer>() {
+//            @Override
+//            public void eventReceived(Action action, Huoer resource) {
+//                logger.info("Huoer event happened");
+//                logger.info(action + resource.toString());
+//            }
+//
+//            @Override
+//            public void onClose(KubernetesClientException cause) {
+//
+//            }
+//        });
+
     }
 }
